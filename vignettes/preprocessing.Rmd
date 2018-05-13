@@ -1,5 +1,5 @@
 ---
-title: "Cytometry dATa anALYSis Tools (CATALYST): Tools for preprocessing & analysis of cytometry data"
+title: "Preprocessing with CATALYST"
 date: "`r BiocStyle::doc_date()`"
 author:
 - name: Helena L Crowell
@@ -14,7 +14,7 @@ abstract: >
 bibliography: refs.bib
 csl: science.csl
 vignette: >
-  %\VignetteIndexEntry{"Cytometry dATa anALYSis Tools (CATALYST): Tools for preprocessing & analysis of cytometry data"}
+  %\VignetteIndexEntry{"Preprocessing with CATALYST"}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 output: 
