@@ -163,7 +163,7 @@ setClass(
 #' @rdname daFrame-class
 #' 
 #' @param x 
-#'   a \code{\link[flowCore]{flowSet}} holding all samples OR
+#'   a \code{flowSet} holding all samples OR
 #'   a character vector that specifies a path to set of FCS files.
 #' @param panel 
 #'   a 2 column \code{data.frame} that contains for each marker of interest 
@@ -200,6 +200,10 @@ daFrame <- function(x, panel, md, cols_to_use=NULL, cofactor=5,
     panel_cols=list(channel="fcs_colname", antigen="antigen"),
     md_cols=list(file="file_name", id="sample_id", 
         factors=c("condition", "patient_id"))) {
+    
+    stopifnot(is.numeric(cofactor))
+    stopifnot(length(cofactor) == 1)
+    stopifnot(cofactor > 0)
     
     if (is.character(x)) {
         stopifnot(dir.exists(x))
@@ -273,7 +277,10 @@ daFrame <- function(x, panel, md, cols_to_use=NULL, cofactor=5,
         SummarizedExperiment(
             assays=SimpleList(exprs=es),
             rowData=row_data, colData=col_data,
-            metadata=list(experiment_info=md, n_cells=n_cells)))
+            metadata=list(
+                experiment_info=md, 
+                n_cells=n_cells, 
+                cofactor=cofactor)))
 }
 
 # validity check
