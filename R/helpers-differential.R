@@ -1,5 +1,5 @@
 # ==============================================================================
-# colors for 20 ConensusClusterPlus metaclusters
+# colors for 30 ConensusClusterPlus metaclusters
 # ------------------------------------------------------------------------------
 cluster_cols <- c(
     "#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72",
@@ -149,4 +149,19 @@ diff_hm <- function(matrix, col, name, xlab, ...) {
         clustering_method_rows="median",
         column_names_gp=gpar(fontsize=8),
         rect_gp=gpar(col='white'))
+}
+
+# ==============================================================================
+# wrapper for  Z-score normalization
+# ------------------------------------------------------------------------------
+z_normalize <- function(es, th=2.5) {
+    es_n <- apply(es, 1, function(x) {
+        sd <- stats::sd(x, na.rm=TRUE)
+        x <- x-mean(x, na.rm=TRUE)
+        if (sd != 0) x <- x/sd
+        x[x >  th] <-  th
+        x[x < -th] <- -th
+        return(x)
+    })
+    return(t(es_n))
 }

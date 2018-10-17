@@ -42,38 +42,42 @@ update_bead_inds <- function(data, bead_inds, bead_cols, trim) {
 # ==============================================================================
 # write FCS of normalized data
 # ------------------------------------------------------------------------------
-outNormed <- function(ff, normed_es, remove_beads, remove, out_path) {
+outNormed <- function(ff, normed_es, remove_beads, 
+    bead_inds, remove, out_path, fn, fn_sep) {
+    if (is.null(fn)) {
+        fn <- flowCore::description(ff)$GUID
+        fn <- gsub(".fcs", "", fn, TRUE)
+    }
     if (remove_beads) {
-        cells <- new("flowFrame",
-            exprs=normed_es[!remove, ],
-            parameters=flowCore::parameters(ff),
-            description=flowCore::description(ff))
-        beads <- new("flowFrame",
-            exprs=normed_es[remove, ],
-            parameters=flowCore::parameters(ff),
-            description=flowCore::description(ff))
-        if (is.null(out_path)) {
-            flowCore::flowSet(cells, beads)
-        } else {
-            out_nm <-  file.path(out_path, gsub(".fcs", "", 
-                flowCore::description(ff)$GUID, TRUE))
-            suppressWarnings(flowCore::write.FCS(cells, 
-                paste0(out_nm, "_normalized.fcs")))
-            suppressWarnings(flowCore::write.FCS(beads, 
-                paste0(out_nm, "_beads.fcs")))
+        ffs <- lapply(list(!remove, bead_inds, remove),  
+            function(inds) new("flowFrame", 
+                exprs=normed_es[inds, ],
+                parameters=flowCore::parameters(ff),
+                description=flowCore::description(ff)))
+        fs <- flowCore::flowSet(ffs)
+        if (!is.null(out_path)) {
+            if (is.null(fn)) {
+                fn <- flowCore::description(ff)$GUID
+                fn <- gsub(".fcs", "", out_nm, TRUE)
+            }
+            fn <- file.path(out_path, fn)
+            out_nms <- paste0(c("normalised", "beads", "removed"), ".fcs")
+            out_nms <- paste(fn, out_nms, sep=fn_sep)
+            suppressWarnings(sapply(seq_len(3), function(i)
+                flowCore::write.FCS(fs[[i]], out_nms[i])))
         }
+        return(fs)
     } else {
-        normed <- new("flowFrame",
+        ff <- new("flowFrame",
             exprs=normed_es,
             parameters=flowCore::parameters(ff),
             description=flowCore::description(ff))
         if (is.null(out_path)) {
-            normed
+            return(ff)
         } else {
-            suppressWarnings(flowCore::write.FCS(normed, 
-                paste0(file.path(out_path, gsub(".fcs", "", 
-                    flowCore::description(ff)$GUID, TRUE), 
-                    "_normalized.fcs"))))
+            out_nm <- paste0(fn, "normalised.fcs", sep=fn_sep)
+            suppressWarnings(flowCore::write.FCS(ff, out_nm))
+            return(ff)
         }
     }
 }
@@ -227,8 +231,8 @@ plotBeads <- function(es_t, bead_inds, bead_cols, dna_cols, hist, xlab, gate) {
 # ==============================================================================
 # plot bead singlets with marginal histograms and all events removed
 # ------------------------------------------------------------------------------
-outPlots <- function(es_t, bead_inds, remove, bead_cols, dna_cols,
-    smoothed_beads, smoothed_normed_beads, out_path) {
+outPlots <- function(x, es_t, bead_inds, remove, bead_cols, dna_cols,
+    smoothed_beads, smoothed_normed_beads, out_path, fn, fn_sep) {
     
     n <- nrow(es_t)
     n_beads <- length(bead_cols)
@@ -243,7 +247,12 @@ outPlots <- function(es_t, bead_inds, remove, bead_cols, dna_cols,
         plotBeads(es_t, remove,    bead_cols, dna_cols, FALSE, TRUE, TRUE))
     
     if (!is.null(out_path)) {
-        pdf(file.path(out_path, "beads_gated.pdf"), 
+        if (is.null(fn)) {
+            fn <- flowCore::description(x)$GUID
+            fn <- gsub(".fcs", "", fn, TRUE)
+        }
+        out_nm <- paste(fn, "beads_gated.pdf", sep=fn_sep)
+        pdf(file.path(out_path, out_nm), 
             width=n_beads*5, height=12.8)
         grid.arrange(grobs=ps, row=3, ncol=n_beads, 
             widths=rep(5, n_beads), heights=c(2.8, 5, 5),
@@ -258,7 +267,7 @@ outPlots <- function(es_t, bead_inds, remove, bead_cols, dna_cols,
     }
     p1 <- plotSmoothed(smoothed_beads, "Smoothed beads")
     p2 <- plotSmoothed(smoothed_normed_beads, "Smoothed normalized beads")
-    arrangeSmoothed(p1, p2, out_path)
+    arrangeSmoothed(x, p1, p2, out_path, fn, fn_sep)
 }
 
 # ==============================================================================
@@ -285,14 +294,18 @@ plotSmoothed <- function(df, main) {
         guides(colour=guide_legend(override.aes=list(size=3)))
 }
 
-arrangeSmoothed <- function(p1, p2, out_path=NULL, shiny=FALSE) {
+arrangeSmoothed <- function(x, p1, p2, out_path, fn, fn_sep, shiny=FALSE) {
     gt <- arrangeGrob(nrow=3, heights=c(5, .5, 5), widths=12,
         grobs=list(p1, rectGrob(gp=gpar(fill="white", col="white")), p2))
     if (shiny) {
         gt
     } else if (!is.null(out_path)) {
-        png(file.path(out_path, "beads_before_vs_after.png"), 
-            width=1500, height=1200, res=150)
+        if (is.null(fn)) {
+            fn <- flowCore::description(x)$GUID
+            fn <- gsub(".fcs", "", fn, TRUE)
+        }
+        out_nm <- paste(fn, "beads_before_vs_after.png", sep=fn_sep)
+        png(file.path(out_path, out_nm), width=1500, height=1200, res=150)
         grid.draw(gt)
         dev.off()
     } else {

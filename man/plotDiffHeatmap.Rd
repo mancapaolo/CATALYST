@@ -12,16 +12,19 @@
 plotDiffHeatmap(x, y, ...)
 
 \S4method{plotDiffHeatmap}{matrix,SummarizedExperiment}(x, y, top_n = 20,
-  all = FALSE, order = TRUE, th = 0.1, ...)
+  all = FALSE, order = TRUE, th = 0.1, hm1 = TRUE,
+  normalize = FALSE, anno_signif = TRUE, anno_padj = TRUE, ...)
 
-\S4method{plotDiffHeatmap}{daFrame,SummarizedExperiment}(x, y, top_n = 20,
-  all = FALSE, order = TRUE, th = 0.1, ...)
+\S4method{plotDiffHeatmap}{daFrame,SummarizedExperiment}(x, y,
+  top_n = 20, all = FALSE, order = TRUE, th = 0.1, hm1 = TRUE,
+  normalize = FALSE, ...)
 
 \S4method{plotDiffHeatmap}{SummarizedExperiment,SummarizedExperiment}(x, y,
-  top_n = 20, all = FALSE, order = TRUE, th = 0.1, ...)
+  top_n = 20, all = FALSE, order = TRUE, th = 0.1, hm1 = TRUE,
+  normalize = FALSE, ...)
 
 \S4method{plotDiffHeatmap}{ANY,list}(x, y, top_n = 20, all = FALSE,
-  order = TRUE, th = 0.1, ...)
+  order = TRUE, th = 0.1, hm1 = TRUE, normalize = FALSE, ...)
 }
 \arguments{
 \item{x}{a \code{\link{daFrame}} or \code{SummarizedExperiment}.}
@@ -44,6 +47,19 @@ should be displayed. If \code{TRUE}, \code{top_n} will be ignored.}
 
 \item{th}{numeric. Threshold on adjusted p-values below which clusters (DA) 
 or cluster-marker combinations (DS) should be considered significant.}
+
+\item{hm1}{logical. Specifies whether the left-hand side heatmap should be plotted.}
+
+\item{normalize}{logical. Specifies whether Z-score normalized values should be plotted 
+in the right-hand side heatmap. If \code{y} contains DA analysis results, 
+relative population abundances will be arcsine-square-root scaled 
+prior to normalization.}
+
+\item{anno_signif}{logical. Should a row annotation indicating whether cluster (DA) 
+or cluster-marker combinations (DS) are significant be included?}
+
+\item{anno_padj}{logical. Should a row annotation for the adjusted p-values of 
+each cluster (DA) or cluster-marker combinations (DS) be included?}
 }
 \value{
 a \code{\link{HeatmapList-class}} object.
@@ -77,9 +93,7 @@ data(PBMC_fs, PBMC_panel, PBMC_md)
 re <- daFrame(PBMC_fs, PBMC_panel, PBMC_md)
 
 # run clustering
-lineage <- c("CD3", "CD45", "CD4", "CD20", "CD33", 
-    "CD123", "CD14", "IgM", "HLA_DR", "CD7")
-re <- cluster(re, cols_to_use=lineage)
+re <- cluster(re)
 
 ## differential analysis
 library(diffcyt)
@@ -92,9 +106,11 @@ contrast <- createContrast(c(0, 1, 0, 0, 0))
 # - differential abundance (DA) of clusters
 # - differential states (DS) within clusters
 da <- diffcyt(re, design = design, contrast = contrast, 
-    analysis_type = "DA", method_DA = "diffcyt-DA-edgeR")
+    analysis_type = "DA", method_DA = "diffcyt-DA-edgeR",
+    clustering_to_use = "meta20")
 ds <- diffcyt(re, design = design, contrast = contrast, 
-    analysis_type = "DS", method_DS = "diffcyt-DS-limma")
+    analysis_type = "DS", method_DS = "diffcyt-DS-limma",
+    clustering_to_use = "meta20")
     
 # display test results for
 # - top DA clusters

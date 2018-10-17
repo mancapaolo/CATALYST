@@ -12,11 +12,6 @@
 \alias{exprs,daFrame-method}
 \alias{daFrame-methods}
 \alias{exprs}
-\alias{type_markers}
-\alias{state_markers}
-\alias{n_cells}
-\alias{cluster_codes}
-\alias{cluster_ids}
 \alias{n_cells,daFrame-method}
 \alias{marker_classes,daFrame-method}
 \alias{type_markers,daFrame-method}
@@ -90,9 +85,7 @@ data(PBMC_fs, PBMC_panel, PBMC_md)
 re <- daFrame(PBMC_fs, PBMC_panel, PBMC_md)
 
 # run clustering
-lineage <- c("CD3", "CD45", "CD4", "CD20", "CD33", 
-    "CD123", "CD14", "IgM", "HLA_DR", "CD7")
-re <- cluster(re, cols_to_use=lineage)
+re <- cluster(re)
 
 # view data summary
 library(SummarizedExperiment)
@@ -108,8 +101,8 @@ state_markers(re)
 
 # get cluster ID correspondece between 2 clusterings
 old_ids <- seq_len(20)
-m <- match(old_ids, cluster_codes(re)$`20`)
-new_ids <- cluster_codes(re)$`12`[m]
+m <- match(old_ids, cluster_codes(re)$`meta20`)
+new_ids <- cluster_codes(re)$`meta12`[m]
 data.frame(old_ids, new_ids)
 
 # plot relative change in area under CDF curve vs. k

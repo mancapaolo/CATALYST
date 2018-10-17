@@ -8,14 +8,15 @@
 \usage{
 plotCodes(x, ...)
 
-\S4method{plotCodes}{daFrame}(x, k = 20, out_path = NULL, verbose = TRUE)
+\S4method{plotCodes}{daFrame}(x, k = "meta20", out_path = NULL,
+  verbose = TRUE)
 }
 \arguments{
 \item{x}{a \code{\link{daFrame}}.}
 
 \item{...}{optional arguments.}
 
-\item{k}{numeric or character string. 
+\item{k}{character string. 
 Specifies the clustering to use for color coding.}
 
 \item{out_path}{character string. If specified, output will be generated in this location.}
@@ -36,9 +37,7 @@ data(PBMC_fs, PBMC_panel, PBMC_md)
 re <- daFrame(PBMC_fs, PBMC_panel, PBMC_md)
 
 # run clustering
-lineage <- c("CD3", "CD45", "CD4", "CD20", "CD33", 
-    "CD123", "CD14", "IgM", "HLA_DR", "CD7")
-re <- cluster(re, cols_to_use=lineage)
+re <- cluster(re)
 plotCodes(re)
 
 }

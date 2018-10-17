@@ -9,7 +9,7 @@
 #' @param x 
 #'   a \code{\link{daFrame}}.
 #' @param k 
-#'   numeric or character string. 
+#'   character string. 
 #'   Specifies the clustering to use for color coding.
 #' @param out_path 
 #'   character string. If specified, output will be generated in this location.
@@ -31,12 +31,11 @@
 #' re <- daFrame(PBMC_fs, PBMC_panel, PBMC_md)
 #' 
 #' # run clustering
-#' lineage <- c("CD3", "CD45", "CD4", "CD20", "CD33", 
-#'     "CD123", "CD14", "IgM", "HLA_DR", "CD7")
-#' re <- cluster(re, cols_to_use=lineage)
+#' re <- cluster(re)
 #' plotCodes(re)
 #' 
 #' @import ggplot2 Rtsne
+#' @import Rtsne  
 #' @importFrom dplyr funs group_by summarize_all
 #' @importFrom grDevices png
 #' @importFrom gridExtra arrangeGrob grid.arrange
@@ -45,7 +44,7 @@
 
 setMethod(f="plotCodes", 
     signature=signature(x="daFrame"), 
-    definition=function(x, k=20, out_path=NULL, verbose=TRUE) {
+    definition=function(x, k="meta20", out_path=NULL, verbose=TRUE) {
         
         # validity check
         check_validity_of_k(x, k)
@@ -59,26 +58,36 @@ setMethod(f="plotCodes",
         df <- data.frame(
             tSNE1=tsne$Y[, 1], tSNE2=tsne$Y[, 2],
             PCA1=pca$x[, 1], PCA2=pca$x[, 2])
-        df$cluster_id <- factor(cluster_codes(x)[, k])
+        # get cluster IDs & sizes
+        df$cluster_id <- cluster_codes(x)[, k]
         df$counts <- as.numeric(table(cluster_ids(x)))
         
         p <- ggplot(df, aes_string(color="cluster_id", size="counts")) +
             theme_classic() + theme(
                 aspect.ratio=1, legend.position="top",
                 panel.grid.minor=element_blank(),
-                panel.grid.major=element_line(color='lightgrey', size=.25), 
+                panel.grid.major=element_line(color='lightgrey', size=.2), 
                 axis.title=element_text(face='bold'),
                 axis.text=element_text(color="black"))
-            
+        
+        # expand palette if more than 30 clusters
+        n_clusters <- nlevels(df$cluster_id)
+        if (n_clusters > 30) {
+            cols <- colorRampPalette(cluster_cols)(n_clusters)
+        } else {
+            cols <- cluster_cols[seq_len(n_clusters)]
+        }
+        names(cols) <- levels(df$cluster_id)
+        
         tsne_plot <- p + geom_point(aes_string(x="tSNE1", y="tSNE2")) + 
-                scale_color_manual(values=cluster_cols, guide=FALSE) +
-                scale_size(guide=FALSE)
-
-        if (k>10) n_row=2 else n_row=1
+            scale_color_manual(values=cols, guide=FALSE) +
+            scale_size(guide=FALSE)
+        
+        if (k > 10) n_row <- 2 else n_row <- 1
         pca_plot <- p + geom_point(aes_string(x="PCA1", y="PCA2")) +
-                guides(color=guide_legend(override.aes=list(size=3), 
-                    nrow=n_row)) + scale_color_manual(values=cluster_cols) 
-            
+            guides(color=guide_legend(override.aes=list(size=3), 
+                nrow=n_row)) + scale_color_manual(values=cols) 
+        
         # store legend
         legend <- get_legend(pca_plot)
         legend_height <- sum(legend$heights)
@@ -100,4 +109,3 @@ setMethod(f="plotCodes",
         }
     }
 )
-        

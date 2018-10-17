@@ -6,9 +6,11 @@
 #'
 #' @param x 
 #'   a \code{\link{daFrame}}.
+#' @param k
+#'   a character string specifying the clustering to merge.
 #' @param table 
-#'   the merging table; a \code{data.frame} with columns 
-#'   \code{'old_cluster'}, \code{'new_cluster'} and \code{'label'}.
+#'   a merging table with 2 columns containing the cluster IDs to merge 
+#'   in the 1st, and the cluster IDs to newly assign in the 2nd column.
 #' @param id 
 #'   character string. Used as a label for the merging.
 #' 
@@ -36,25 +38,30 @@
 #' re <- daFrame(PBMC_fs, PBMC_panel, PBMC_md)
 #' 
 #' # run clustering
-#' lineage <- c("CD3", "CD45", "CD4", "CD20", "CD33", 
-#'     "CD123", "CD14", "IgM", "HLA_DR", "CD7")
-#' re <- cluster(re, cols_to_use=lineage)
+#' re <- cluster(re)
 #' 
 #' # merge clusters
-#' re <- mergeClusters(re, merging_table, "merging")
+#' re <- mergeClusters(re, k="meta20", table=merging_table, id="merging")
 #' plotClusterHeatmap(re, k="merging", hm2="pS6")
 # ------------------------------------------------------------------------------
 
 setMethod(f="mergeClusters", 
-    signature=signature(x="daFrame"), 
-    definition=function(x, table, id) {
-        if (id %in% colnames(metadata(x)$cluster_codes)) {
+    signature=signature(x="daFrame", k="character", 
+        table="data.frame", id="character"), 
+    definition=function(x, k, table, id) {
+        
+        # validity checks
+        check_validity_of_k(x, k)
+        table <- data.frame(table)
+        stopifnot(length(id) == 1)
+        if (id %in% colnames(metadata(x)$cluster_codes))
             stop("There already exists a clustering named ",
                 id, ". Please specify a different identifier.")
-        }
-        k <- max(table$old_cluster)
-        m <- match(cluster_codes(x)[, k], table$old_cluster)
-        new_ids <- table$new_cluster[m]
+        stopifnot(length(table[, 1]) == length(unique(table[, 1])))
+        stopifnot(all(table[, 1] %in% levels(cluster_codes(x)[, k])))
+
+        m <- match(cluster_codes(x)[, k], table[, 1])
+        new_ids <- table[m, 2]
         metadata(x)$cluster_codes[, id] <- factor(new_ids)
         return(x)
     }
